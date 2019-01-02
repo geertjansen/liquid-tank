@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Demo</title>
+    <style>
+      #container {
+        display: inline;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 20vw;
+        height: 25vh;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script src="./liquid-tank.js"></script>
+    <script>
+      var chart = new LiquidTank(document.getElementById("container"), {
+        min: 0,
+        max: 100,
+        segments: [
+          {
+            color: 'green',
+            startValue: 0,
+            endValue: 70
+          },
+          {
+            color: 'yellow',
+            startValue: 70,
+            endValue: 80
+          },
+          {
+            color: 'orange',
+            startValue: 80,
+            endValue: 90
+          },
+          {
+            color: 'red',
+            startValue: 90,
+            endValue: 100
+          }
+        ]
+      });
+
+      chart.setValue(95);
+    </script>
+  </body>
+</html>

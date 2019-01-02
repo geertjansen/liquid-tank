@@ -1,0 +1,19 @@
+{
+  "name": "liquid-tank",
+  "version": "0.0.0",
+  "description": "",
+  "main": "liquid-tank.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geertjansen/liquid-tank.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/geertjansen/liquid-tank/issues"
+  },
+  "homepage": "https://github.com/geertjansen/liquid-tank#readme"
+}
