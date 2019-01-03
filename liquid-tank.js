@@ -1,75 +1,62 @@
-/**
- * @preserve
- * JS Implementation of LiquidTank (as of May 10, 2013)
- *
- * @author <a href="mailto:geert-jansen@hotmail.com">Jens Taylor</a>
- * @see http://github.com/homebrewing/brauhaus-diff
- */
 (function() {
-  var _height;
-  var _originalValue;
-  var _value;
-  var _width;
-
-  // @param {string | DOMElement} target
-  // @param {object} optional configuration options
-  // @return {object} A LiquidTank instance object
   function LiquidTank(element, options) {
-    this.element = typeof element === 'string' ? document.querySelector(element) : element;
+    this.element =
+      typeof element === "string" ? document.querySelector(element) : element;
     this.options = options || {};
-
-    if (this.options.min === undefined) this.options.min = 0;
-    if (this.options.max === undefined) this.options.max = 1;
-
-    _height = this.element.clientHeight;
-    _width = this.element.clientWidth;
-
+    if (typeof this.options.min === undefined) this.options.min = 0;
+    if (typeof this.options.max === undefined) this.options.max = 1;
     this.canvas = document.createElement("canvas");
     this.element.appendChild(this.canvas);
     this.render();
-
-    var self = this;
-    window.addEventListener("resize", function() {
-      _height = self.element.clientHeight;
-      _width = self.element.clientWidth;
-      self.render();
-      self.setValue(_originalValue);
-    });
-
+    this.onResize = this.onResize.bind(this);
+    window.addEventListener("resize", this.onResize);
     return this;
   }
 
-  LiquidTank.prototype.config = function() {
+  LiquidTank.prototype.clear = function() {
+    this.canvas
+      .getContext("2d")
+      .clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.element.removeChild(this.canvas);
+    window.removeEventListener("resize", this.onResize);
+  };
+
+  LiquidTank.prototype.config = function(options) {
+    if (options) {
+      if (typeof options.min !== "undefined") this.options.min = options.min;
+      if (typeof options.max !== "undefined") this.options.max = options.max;
+    }
     return this;
   };
 
   LiquidTank.prototype.render = function() {
-    var ctx = this.canvas.getContext('2d');
+    var clientHeight = this.element.clientHeight;
+    var clientWidth = this.element.clientWidth;
+    var min = this.options.min;
+    var max = this.options.max;
+    var range = max - min;
+    var ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.canvas.height = _height;
-    this.canvas.width = _width;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.34)';
+    this.canvas.height = clientHeight;
+    this.canvas.width = clientWidth;
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.34)";
     if (this.options.segments) {
-      var gradient = ctx.createLinearGradient(10, _height - 20, 10, 10);
+      var gradient = ctx.createLinearGradient(10, clientHeight - 10, 10, 10);
       for (i = 0; i < this.options.segments.length; i++) {
         var segment = this.options.segments[i];
-        gradient.addColorStop(
-          segment.startValue / (this.options.max - this.options.min),
-          segment.color
-        );
-        gradient.addColorStop(
-          segment.endValue / (this.options.max - this.options.min),
-          segment.color
-        );
+        var start = segment.startValue - min;
+        var end = segment.endValue - min;
+        gradient.addColorStop(start / range, segment.color);
+        gradient.addColorStop(end / range, segment.color);
       }
       ctx.fillStyle = gradient;
     }
-    roundRect(
+    _drawRoundedRect(
       this.canvas,
       0,
       0,
-      _width,
-      _height,
+      clientWidth,
+      clientHeight,
       { lowerLeft: 24, lowerRight: 24 },
       false,
       true
@@ -78,13 +65,31 @@
   };
 
   LiquidTank.prototype.setValue = function(value) {
-    _originalValue = value;
-    _value = (value / (this.options.max - this.options.min)) * (_height - 20);
-    x = 10;
-    y = 10 + (_height - 20 - _value);
-    w = _width - 20;
-    h = _height - 20 - (_height - 20 - _value);
-    roundRect(this.canvas, x, y, w, h, { lowerLeft: 16, lowerRight: 16 }, true, false);
+    var clientHeight = this.element.clientHeight;
+    var clientWidth = this.element.clientWidth;
+    var min = this.options.min;
+    var max = this.options.max;
+    this._originalValue = value;
+    this._value = _getValue(min, max, value) * (clientHeight - 20);
+    var x = 10;
+    var y = 10 + (clientHeight - 20 - this._value);
+    var w = clientWidth - 20;
+    var h = clientHeight - 20 - (clientHeight - 20 - this._value);
+    _drawRoundedRect(
+      this.canvas,
+      x,
+      y,
+      w,
+      h,
+      { lowerLeft: 16, lowerRight: 16 },
+      true,
+      false
+    );
+  };
+
+  LiquidTank.prototype.onResize = function() {
+    this.render();
+    this.setValue(this._originalValue);
   };
 
   /**
@@ -99,11 +104,16 @@
    * @param {Boolean} fill Whether to fill the rectangle. Defaults to false.
    * @param {Boolean} stroke Whether to stroke the rectangle. Defaults to true.
    */
-  function roundRect(canvas, x, y, width, height, radius, fill, stroke) {
-    var cornerRadius = { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 };
-    var ctx = canvas.getContext('2d');
-    if (typeof stroke === 'undefined') stroke = true;
-    if (typeof radius === 'object') {
+  function _drawRoundedRect(canvas, x, y, width, height, radius, fill, stroke) {
+    var cornerRadius = {
+      upperLeft: 0,
+      upperRight: 0,
+      lowerLeft: 0,
+      lowerRight: 0
+    };
+    var ctx = canvas.getContext("2d");
+    if (typeof stroke === "undefined") stroke = true;
+    if (typeof radius === "object") {
       for (var side in radius) {
         cornerRadius[side] = radius[side];
       }
@@ -132,7 +142,11 @@
     }
   }
 
-  if (typeof module !== 'undefined') {
+  function _getValue(min, max, value) {
+    return (value - min) / (max - min);
+  }
+
+  if (typeof module !== "undefined") {
     module.exports = LiquidTank;
   } else {
     this.LiquidTank = LiquidTank;

@@ -6,51 +6,110 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Demo</title>
     <style>
-      #container {
-        display: inline;
+      .tank-container {
         position: absolute;
         top: 0;
         right: 0;
         bottom: 0;
         left: 0;
-        width: 20vw;
+        width: 25vw;
         height: 25vh;
         margin: auto;
+      }
+
+      #left {
+        right: 50%;
+      }
+
+      #right {
+        left: 50%;
       }
     </style>
   </head>
   <body>
-    <div id="container"></div>
+    <div class="tank-container" id="left"></div>
+    <div class="tank-container" id="right"></div>
     <script src="./liquid-tank.js"></script>
     <script>
-      var chart = new LiquidTank(document.getElementById("container"), {
+      var tankLeft = new LiquidTank(document.getElementById("left"), {
         min: 0,
         max: 100,
         segments: [
           {
-            color: 'green',
+            color: "green",
             startValue: 0,
+            endValue: 10
+          },
+          {
+            color: "red",
+            startValue: 10,
+            endValue: 20
+          },
+          {
+            color: "green",
+            startValue: 20,
+            endValue: 30
+          },
+          {
+            color: "red",
+            startValue: 30,
+            endValue: 40
+          },
+          {
+            color: "green",
+            startValue: 40,
+            endValue: 50
+          },
+          {
+            color: "red",
+            startValue: 50,
+            endValue: 60
+          },
+          {
+            color: "green",
+            startValue: 60,
             endValue: 70
           },
           {
-            color: 'yellow',
+            color: "red",
             startValue: 70,
             endValue: 80
           },
           {
-            color: 'orange',
+            color: "green",
             startValue: 80,
             endValue: 90
           },
           {
-            color: 'red',
+            color: "red",
             startValue: 90,
             endValue: 100
           }
         ]
       });
-
-      chart.setValue(95);
+      tankLeft.setValue(95);
+      var tankRight = new LiquidTank(document.getElementById("right"), {
+        min: -20,
+        max: 120,
+        segments: [
+          {
+            color: "red",
+            startValue: -20,
+            endValue: 0
+          },
+          {
+            color: "green",
+            startValue: 0,
+            endValue: 100
+          },
+          {
+            color: "red",
+            startValue: 100,
+            endValue: 120
+          }
+        ]
+      });
+      tankRight.setValue(100);
     </script>
   </body>
 </html>

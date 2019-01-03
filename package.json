@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/geertjansen/liquid-tank.git"
   },
-  "author": "",
+  "author": "Geert Jansen<geert-jansen@hotmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/geertjansen/liquid-tank/issues"
