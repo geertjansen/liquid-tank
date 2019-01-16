@@ -15,10 +15,12 @@
         width: 25vw;
         height: 25vh;
         margin: auto;
+        padding: 20px;
       }
 
       #left {
         right: 50%;
+        background-color: #444;
       }
 
       #right {
@@ -32,8 +34,13 @@
     <script src="./liquid-tank.js"></script>
     <script>
       var tankLeft = new LiquidTank(document.getElementById("left"), {
+        dark: true,
         min: 0,
         max: 100,
+        fontFamily: 'Roboto, \'Helvetica Neue\', sans-serif',
+        valueFormatter: function(value) {
+          return value + ' L';
+        },
         segments: [
           {
             color: "green",
@@ -91,6 +98,10 @@
       var tankRight = new LiquidTank(document.getElementById("right"), {
         min: -20,
         max: 120,
+        fontFamily: 'Roboto, \'Helvetica Neue\', sans-serif',
+        valueFormatter: function(value) {
+          return value + ' L';
+        },
         segments: [
           {
             color: "red",

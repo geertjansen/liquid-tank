@@ -3,8 +3,18 @@
     this.element =
       typeof element === "string" ? document.querySelector(element) : element;
     this.options = options || {};
-    if (typeof this.options.min === undefined) this.options.min = 0;
-    if (typeof this.options.max === undefined) this.options.max = 1;
+    if (typeof this.options.dark === "undefined") this.options.dark = false;
+    if (typeof this.options.min === "undefined") this.options.min = 0;
+    if (typeof this.options.max === "undefined") this.options.max = 1;
+    if (typeof this.options.fontSize === "undefined")
+      this.options.fontSize = 20;
+    this.options._lineHeight = this.options.fontSize + 20;
+    if (typeof this.options.fontFamily === "undefined")
+      this.options.fontFamily = "Helvetica";
+    if (typeof this.options.valueFormatter === "undefined")
+      this.options.valueFormatter = function(value) {
+        return String(value);
+      };
     this.canvas = document.createElement("canvas");
     this.element.appendChild(this.canvas);
     this.render();
@@ -30,18 +40,24 @@
   };
 
   LiquidTank.prototype.render = function() {
-    var clientHeight = this.element.clientHeight;
-    var clientWidth = this.element.clientWidth;
+    var clientHeight = _getActualHeight(this.element)
+    var clientWidth = _getActualWidth(this.element);
     var min = this.options.min;
     var max = this.options.max;
     var range = max - min;
+    var lineHeight = this.options._lineHeight;
     var ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.canvas.height = clientHeight;
     this.canvas.width = clientWidth;
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.34)";
+    ctx.strokeStyle = _getBorderColor(this.options);
     if (this.options.segments) {
-      var gradient = ctx.createLinearGradient(10, clientHeight - 10, 10, 10);
+      var gradient = ctx.createLinearGradient(
+        10,
+        clientHeight - lineHeight - 10,
+        10,
+        10
+      );
       for (i = 0; i < this.options.segments.length; i++) {
         var segment = this.options.segments[i];
         var start = segment.startValue - min;
@@ -56,7 +72,7 @@
       0,
       0,
       clientWidth,
-      clientHeight,
+      clientHeight - lineHeight,
       { lowerLeft: 24, lowerRight: 24 },
       false,
       true
@@ -65,16 +81,17 @@
   };
 
   LiquidTank.prototype.setValue = function(value) {
-    var clientHeight = this.element.clientHeight;
-    var clientWidth = this.element.clientWidth;
+    var clientHeight = _getActualHeight(this.element);
+    var clientWidth = _getActualWidth(this.element);
+    var height = clientHeight - this.options._lineHeight;
     var min = this.options.min;
     var max = this.options.max;
     this._originalValue = value;
-    this._value = _getValue(min, max, value) * (clientHeight - 20);
+    this._value = _getValue(min, max, value) * (height - 20);
     var x = 10;
-    var y = 10 + (clientHeight - 20 - this._value);
+    var y = 10 + (height - 20 - this._value);
     var w = clientWidth - 20;
-    var h = clientHeight - 20 - (clientHeight - 20 - this._value);
+    var h = height - 20 - (height - 20 - this._value);
     _drawRoundedRect(
       this.canvas,
       x,
@@ -85,6 +102,7 @@
       true,
       false
     );
+    _drawTextValue(value, this.canvas, this.options);
   };
 
   LiquidTank.prototype.onResize = function() {
@@ -140,6 +158,34 @@
     if (fill) {
       ctx.fill();
     }
+  }
+
+  function _drawTextValue(value, canvas, options) {
+    var ctx = canvas.getContext("2d");
+    var font = "normal 400 " + options.fontSize + "px " + options.fontFamily;
+    var textValue = options.valueFormatter(value);
+    ctx.font = font;
+    ctx.textAlign = "center";
+    ctx.fillStyle = _getTextColor(options);
+    ctx.fillText(textValue, canvas.width * 0.5, canvas.height - 8);
+  }
+
+  function _getActualHeight(element) {
+    var style = window.getComputedStyle(element, null);
+    return parseInt(style.getPropertyValue("height"));
+  }
+
+  function _getActualWidth(element) {
+    var style = window.getComputedStyle(element, null);
+    return parseInt(style.getPropertyValue("width"));
+  }
+
+  function _getBorderColor(options) {
+    return options.dark ? "rgb(255,255,255)" : "rgba(0,0,0,0.34)";
+  }
+
+  function _getTextColor(options) {
+    return options.dark ? "rgb(255,255,255)" : "rgba(0,0,0,0.87)";
   }
 
   function _getValue(min, max, value) {
