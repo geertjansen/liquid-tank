@@ -48,7 +48,10 @@
   };
 
   LiquidTank.prototype.setValue = function(value) {
-    var currentValue = this._originalValue || 0;
+    var currentValue =
+      typeof this._originalValue !== "undefined"
+        ? this._originalValue
+        : this.options.min;
     this._originalValue = value;
     _animateFromToValue(currentValue, value, this.canvas, this.options);
   };
