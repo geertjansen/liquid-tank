@@ -40,69 +40,17 @@
   };
 
   LiquidTank.prototype.render = function() {
-    var clientHeight = _getActualHeight(this.element)
-    var clientWidth = _getActualWidth(this.element);
-    var min = this.options.min;
-    var max = this.options.max;
-    var range = max - min;
-    var lineHeight = this.options._lineHeight;
-    var ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.canvas.height = clientHeight;
-    this.canvas.width = clientWidth;
-    ctx.strokeStyle = _getBorderColor(this.options);
-    if (this.options.segments) {
-      var gradient = ctx.createLinearGradient(
-        10,
-        clientHeight - lineHeight - 10,
-        10,
-        10
-      );
-      for (i = 0; i < this.options.segments.length; i++) {
-        var segment = this.options.segments[i];
-        var start = segment.startValue - min;
-        var end = segment.endValue - min;
-        gradient.addColorStop(start / range, segment.color);
-        gradient.addColorStop(end / range, segment.color);
-      }
-      ctx.fillStyle = gradient;
-    }
-    _drawRoundedRect(
-      this.canvas,
-      0,
-      0,
-      clientWidth,
-      clientHeight - lineHeight,
-      { lowerLeft: 24, lowerRight: 24 },
-      false,
-      true
-    );
+    this.canvas.height = _getActualHeight(this.element);
+    this.canvas.width = _getActualWidth(this.element);
+    _clearTank(this.canvas);
+    _drawTank(this.canvas, this.options);
     return this;
   };
 
   LiquidTank.prototype.setValue = function(value) {
-    var clientHeight = _getActualHeight(this.element);
-    var clientWidth = _getActualWidth(this.element);
-    var height = clientHeight - this.options._lineHeight;
-    var min = this.options.min;
-    var max = this.options.max;
+    var currentValue = this._originalValue || 0;
     this._originalValue = value;
-    this._value = _getValue(min, max, value) * (height - 20);
-    var x = 10;
-    var y = 10 + (height - 20 - this._value);
-    var w = clientWidth - 20;
-    var h = height - 20 - (height - 20 - this._value);
-    _drawRoundedRect(
-      this.canvas,
-      x,
-      y,
-      w,
-      h,
-      { lowerLeft: 16, lowerRight: 16 },
-      true,
-      false
-    );
-    _drawTextValue(value, this.canvas, this.options);
+    _animateFromToValue(currentValue, value, this.canvas, this.options);
   };
 
   LiquidTank.prototype.onResize = function() {
@@ -160,6 +108,71 @@
     }
   }
 
+  function _animateFromToValue(fromValue, toValue, canvas, options) {
+    var val = fromValue;
+    var speed = 2;
+    var requestAnimationFrame =
+      window.requestAnimationFrame ||
+      window.mozRequestAnimationFrame ||
+      window.webkitRequestAnimationFrame ||
+      window.msRequestAnimationFrame;
+    function draw() {
+      if (val < toValue && toValue - val >= speed) {
+        val += speed;
+      } else if (val > toValue && val - toValue >= speed) {
+        val -= speed;
+      } else {
+        val = toValue;
+      }
+      _clearTank(canvas);
+      _drawTank(canvas, options);
+      _drawTankFill(val, canvas, options);
+      _drawTextValue(toValue, canvas, options);
+      if (val !== toValue) {
+        requestAnimationFrame(draw);
+      }
+    }
+    draw();
+  }
+
+  function _clearTank(canvas) {
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function _drawTank(canvas, options) {
+    var ctx = canvas.getContext("2d");
+    var lineHeight = options._lineHeight;
+    ctx.strokeStyle = _getBorderColor(options);
+    if (options.segments) {
+      ctx.fillStyle = _getGradientFillStyle(canvas, options);
+    }
+    _drawRoundedRect(
+      canvas,
+      0,
+      0,
+      canvas.width,
+      canvas.height - lineHeight,
+      { lowerLeft: 24, lowerRight: 24 },
+      false,
+      true
+    );
+  }
+
+  function _drawTankFill(value, canvas, options) {
+    var params = _getDrawParams(value, canvas, options);
+    _drawRoundedRect(
+      canvas,
+      params.x,
+      params.y,
+      params.w,
+      params.h,
+      { lowerLeft: 16, lowerRight: 16 },
+      true,
+      false
+    );
+  }
+
   function _drawTextValue(value, canvas, options) {
     var ctx = canvas.getContext("2d");
     var font = "normal 400 " + options.fontSize + "px " + options.fontFamily;
@@ -182,6 +195,44 @@
 
   function _getBorderColor(options) {
     return options.dark ? "rgb(255,255,255)" : "rgba(0,0,0,0.34)";
+  }
+
+  function _getDrawParams(value, canvas, options) {
+    var canvasHeight = canvas.height;
+    var canvasWidth = canvas.width;
+    var height = canvasHeight - options._lineHeight;
+    var width = canvasWidth;
+    var min = options.min;
+    var max = options.max;
+    var _value = _getValue(min, max, value) * (height - 20);
+    var x = 10;
+    var y = 10 + (height - 20 - _value);
+    var w = width - 20;
+    var h = height - 20 - (height - 20 - _value);
+    return {
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      value: _value
+    };
+  }
+
+  function _getGradientFillStyle(canvas, options) {
+    var ctx = canvas.getContext("2d");
+    var height = canvas.height - options._lineHeight;
+    var gradient = ctx.createLinearGradient(10, height - 10, 10, 10);
+    var min = options.min;
+    var max = options.max;
+    var range = max - min;
+    for (i = 0; i < options.segments.length; i++) {
+      var segment = options.segments[i];
+      var start = segment.startValue - min;
+      var end = segment.endValue - min;
+      gradient.addColorStop(start / range, segment.color);
+      gradient.addColorStop(end / range, segment.color);
+    }
+    return gradient;
   }
 
   function _getTextColor(options) {
