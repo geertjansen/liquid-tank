@@ -81,27 +81,25 @@
       lowerRight: 0
     };
     var ctx = canvas.getContext("2d");
+    var radiusScaleFactor = 1.75;
     if (typeof stroke === "undefined") stroke = true;
     if (typeof radius === "object") {
       for (var side in radius) {
-        cornerRadius[side] = radius[side];
+        cornerRadius[side] =
+          radius[side] > height ? Math.round(height) : radius[side];
       }
     }
+    if (radius.lowerLeft > height) {
+      x = x + Math.round((radius.lowerLeft - height) / radiusScaleFactor);
+      width =
+        width - Math.round((radius.lowerLeft - height) / radiusScaleFactor) * 2;
+    }
     ctx.beginPath();
-    ctx.moveTo(x + cornerRadius.upperLeft, y);
-    ctx.lineTo(x + width - cornerRadius.upperRight, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + cornerRadius.upperRight);
-    ctx.lineTo(x + width, y + height - cornerRadius.lowerRight);
-    ctx.quadraticCurveTo(
-      x + width,
-      y + height,
-      x + width - cornerRadius.lowerRight,
-      y + height
-    );
-    ctx.lineTo(x + cornerRadius.lowerLeft, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - cornerRadius.lowerLeft);
-    ctx.lineTo(x, y + cornerRadius.upperLeft);
-    ctx.quadraticCurveTo(x, y, x + cornerRadius.upperLeft, y);
+    ctx.moveTo(x + cornerRadius.lowerLeft, y + height);
+    ctx.arcTo(x + 0, y + height, x + 0, y + 0, cornerRadius.lowerLeft);
+    ctx.arcTo(x + 0, y + 0, x + width, y + 0, cornerRadius.upperLeft);
+    ctx.arcTo(x + width, y + 0, x + width, y + height, cornerRadius.upperRight);
+    ctx.arcTo(x + width, y + height, 0, y + height, cornerRadius.lowerRight);
     ctx.closePath();
     if (stroke) {
       ctx.stroke();
@@ -112,21 +110,16 @@
   }
 
   function _animateFromToValue(fromValue, toValue, canvas, options) {
-    var val = fromValue;
-    var speed = 2;
+    var now = new Date().getTime();
     var requestAnimationFrame =
       window.requestAnimationFrame ||
       window.mozRequestAnimationFrame ||
       window.webkitRequestAnimationFrame ||
       window.msRequestAnimationFrame;
     function draw() {
-      if (val < toValue && toValue - val >= speed) {
-        val += speed;
-      } else if (val > toValue && val - toValue >= speed) {
-        val -= speed;
-      } else {
-        val = toValue;
-      }
+      var time = new Date().getTime() - now;
+      if (time > 300) time = 300;
+      var val = _easeInOutQuart(time, fromValue, toValue - fromValue, 300);
       _clearTank(canvas);
       _drawTank(canvas, options);
       _drawTankFill(val, canvas, options);
@@ -186,6 +179,17 @@
     ctx.fillText(textValue, canvas.width * 0.5, canvas.height - 8);
   }
 
+  /**
+   * @param {Number} t Current time
+   * @param {Number} b Beginning value
+   * @param {Number} c Change in value
+   * @param {Number} d Duration
+   */
+  function _easeInOutQuart(t, b, c, d) {
+    if ((t /= d / 2) < 1) return (c / 2) * t * t * t * t + b;
+    return (-c / 2) * ((t -= 2) * t * t * t - 2) + b;
+  }
+
   function _getActualHeight(element) {
     var style = window.getComputedStyle(element, null);
     return parseInt(style.getPropertyValue("height"));
@@ -194,6 +198,10 @@
   function _getActualWidth(element) {
     var style = window.getComputedStyle(element, null);
     return parseInt(style.getPropertyValue("width"));
+  }
+
+  function _getBaseFillColor(options) {
+    return options.dark ? "rgb(255,255,255)" : "rgba(0,0,0,0.67)";
   }
 
   function _getBorderColor(options) {
@@ -228,8 +236,33 @@
     var min = options.min;
     var max = options.max;
     var range = max - min;
-    for (i = 0; i < options.segments.length; i++) {
-      var segment = options.segments[i];
+    var segments = options.segments;
+    var _segments = [];
+    if (segments.length) {
+      for (i = 0; i < segments.length; i++) {
+        var prevEndValue = i === 0 ? min : segments[i - 1].endValue;
+        var nextStartValue =
+          i === segments.length - 1 ? max : segments[i + 1].startValue;
+        var segment = segments[i];
+        if (segment.startValue > prevEndValue) {
+          _segments.push({
+            color: _getBaseFillColor(options),
+            startValue: prevEndValue,
+            endValue: segment.startValue
+          });
+        }
+        _segments.push(segment);
+        if (segment.endValue < nextStartValue) {
+          _segments.push({
+            color: _getBaseFillColor(options),
+            startValue: segment.endValue,
+            endValue: nextStartValue
+          });
+        }
+      }
+    }
+    for (i = 0; i < _segments.length; i++) {
+      var segment = _segments[i];
       var start = segment.startValue - min;
       var end = segment.endValue - min;
       gradient.addColorStop(start / range, segment.color);

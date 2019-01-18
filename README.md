@@ -8,7 +8,7 @@ Simple widget for displaying data from liquids.
 | -------------: | ------------------------------------------------------------ | -------- | ------- |
 |            min | Minimum value                                                | Number   | 0       |
 |            max | Maximum value                                                | Number   | 1       |
-|       segments | List of segements.                                           | Array    | [ ]     |
+|       segments | List of segments.                                            | Array    | [ ]     |
 |           dark | When set to true it adjusts colors for a darker background.  | Boolean  | false   |
 |     fontFamily | Font family for the displayed value                          | String   | Arial   |
 |       fontSize | Font size for the displayed value                            | Number   | 20      |
