@@ -140,7 +140,7 @@
     var ctx = canvas.getContext("2d");
     var lineHeight = options._lineHeight;
     ctx.strokeStyle = _getBorderColor(options);
-    if (options.segments) {
+    if (options.segments && options.segments.length) {
       ctx.fillStyle = _getGradientFillStyle(canvas, options);
     }
     _drawRoundedRect(
@@ -148,7 +148,7 @@
       0,
       0,
       canvas.width,
-      canvas.height - lineHeight,
+      canvas.height - lineHeight - 8,
       { lowerLeft: 24, lowerRight: 24 },
       false,
       true
@@ -176,7 +176,7 @@
     ctx.font = font;
     ctx.textAlign = "center";
     ctx.fillStyle = _getTextColor(options);
-    ctx.fillText(textValue, canvas.width * 0.5, canvas.height - 8);
+    ctx.fillText(textValue, canvas.width * 0.5, canvas.height - 16);
   }
 
   /**
@@ -211,7 +211,7 @@
   function _getDrawParams(value, canvas, options) {
     var canvasHeight = canvas.height;
     var canvasWidth = canvas.width;
-    var height = canvasHeight - options._lineHeight;
+    var height = canvasHeight - options._lineHeight - 8;
     var width = canvasWidth;
     var min = options.min;
     var max = options.max;
@@ -231,14 +231,14 @@
 
   function _getGradientFillStyle(canvas, options) {
     var ctx = canvas.getContext("2d");
-    var height = canvas.height - options._lineHeight;
+    var height = canvas.height - options._lineHeight - 8;
     var gradient = ctx.createLinearGradient(10, height - 10, 10, 10);
     var min = options.min;
     var max = options.max;
     var range = max - min;
     var segments = options.segments;
     var _segments = [];
-    if (segments.length) {
+    if (segments && segments.length) {
       for (i = 0; i < segments.length; i++) {
         var prevEndValue = i === 0 ? min : segments[i - 1].endValue;
         var nextStartValue =
