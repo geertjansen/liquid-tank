@@ -87,6 +87,7 @@
       for (var side in radius) {
         cornerRadius[side] =
           radius[side] > height ? Math.round(height) : radius[side];
+        if (cornerRadius[side] < 0) cornerRadius[side] = 0;
       }
     }
     if (radius.lowerLeft > height) {
@@ -192,7 +193,9 @@
 
   function _getActualHeight(element) {
     var style = window.getComputedStyle(element, null);
-    return parseInt(style.getPropertyValue("height"));
+    var height = parseInt(style.getPropertyValue("height"));
+    var minHeight = 80; // 8 + 16 + 8 + 40 + 8
+    return height < minHeight ? minHeight : height;
   }
 
   function _getActualWidth(element) {
