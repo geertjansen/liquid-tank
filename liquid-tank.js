@@ -18,7 +18,7 @@
     this.canvas = document.createElement("canvas");
     this.element.appendChild(this.canvas);
     this.render();
-    this.onResize = this.onResize.bind(this);
+    this.onResize = _debounce(this.onResize.bind(this), 66);
     window.addEventListener("resize", this.onResize);
     return this;
   }
@@ -58,7 +58,9 @@
 
   LiquidTank.prototype.onResize = function() {
     this.render();
-    this.setValue(this._originalValue);
+    if (this._originalValue) {
+      this.setValue(this._originalValue);
+    }
   };
 
   /**
@@ -137,13 +139,28 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
+  // Returns a function, that, as long as it continues to be invoked, will not
+  // be triggered. The function will be called after it stops being called for
+  // N milliseconds. If `immediate` is passed, trigger the function on the
+  // leading edge, instead of the trailing.
+  function _debounce(func, wait, immediate) {
+    var timeout;
+    return function() {
+      var context = this, args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(function() {
+        timeout = null;
+        if (!immediate) func.apply(context, args);
+      }, wait);
+      if (immediate && !timeout) func.apply(context, args);
+    };
+  }
+
   function _drawTank(canvas, options) {
     var ctx = canvas.getContext("2d");
     var lineHeight = options._lineHeight;
     ctx.strokeStyle = _getBorderColor(options);
-    if (options.segments && options.segments.length) {
-      ctx.fillStyle = _getGradientFillStyle(canvas, options);
-    }
+    ctx.fillStyle = _getGradientFillStyle(canvas, options);
     _drawRoundedRect(
       canvas,
       0,
@@ -263,6 +280,12 @@
           });
         }
       }
+    } else {
+      _segments.push({
+        color: _getBaseFillColor(options),
+        startValue: min,
+        endValue: max
+      });
     }
     for (i = 0; i < _segments.length; i++) {
       var segment = _segments[i];
