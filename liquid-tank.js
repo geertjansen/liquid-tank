@@ -3,6 +3,8 @@
     this.element =
       typeof element === "string" ? document.querySelector(element) : element;
     this.options = options || {};
+    if (typeof this.options.fillStyle === "undefined")
+      this.options.fillStyle = "solid";
     if (typeof this.options.dark === "undefined") this.options.dark = false;
     if (typeof this.options.min === "undefined") this.options.min = 0;
     if (typeof this.options.max === "undefined") this.options.max = 1;
@@ -43,17 +45,21 @@
     this.canvas.height = _getActualHeight(this.element);
     this.canvas.width = _getActualWidth(this.element);
     _clearTank(this.canvas);
-    _drawTank(this.canvas, this.options);
+    _drawTank(this._getLatestValue(), this.canvas, this.options);
     return this;
   };
 
   LiquidTank.prototype.setValue = function(value) {
-    var currentValue =
-      typeof this._originalValue !== "undefined"
-        ? this._originalValue
-        : this.options.min;
+    var currentValue = this._getLatestValue();
+    var initial = typeof this._originalValue === "undefined";
     this._originalValue = value;
-    _animateFromToValue(currentValue, value, this.canvas, this.options);
+    _animateFromToValue(
+      currentValue,
+      value,
+      this.canvas,
+      this.options,
+      initial
+    );
   };
 
   LiquidTank.prototype.onResize = function() {
@@ -61,6 +67,12 @@
     if (this._originalValue) {
       this.setValue(this._originalValue);
     }
+  };
+
+  LiquidTank.prototype._getLatestValue = function() {
+    return typeof this._originalValue !== "undefined"
+      ? this._originalValue
+      : this.options.min;
   };
 
   /**
@@ -112,7 +124,7 @@
     }
   }
 
-  function _animateFromToValue(fromValue, toValue, canvas, options) {
+  function _animateFromToValue(fromValue, toValue, canvas, options, initial) {
     var now = new Date().getTime();
     var requestAnimationFrame =
       window.requestAnimationFrame ||
@@ -124,7 +136,7 @@
       if (time > 300) time = 300;
       var val = _easeInOutQuart(time, fromValue, toValue - fromValue, 300);
       _clearTank(canvas);
-      _drawTank(canvas, options);
+      _drawTank(initial ? toValue : val, canvas, options);
       _drawTankFill(val, canvas, options);
       _drawTextValue(toValue, canvas, options);
       if (val !== toValue) {
@@ -146,7 +158,8 @@
   function _debounce(func, wait, immediate) {
     var timeout;
     return function() {
-      var context = this, args = arguments;
+      var context = this,
+        args = arguments;
       clearTimeout(timeout);
       timeout = setTimeout(function() {
         timeout = null;
@@ -156,11 +169,14 @@
     };
   }
 
-  function _drawTank(canvas, options) {
+  function _drawTank(value, canvas, options) {
     var ctx = canvas.getContext("2d");
     var lineHeight = options._lineHeight;
     ctx.strokeStyle = _getBorderColor(options);
-    ctx.fillStyle = _getGradientFillStyle(canvas, options);
+    if (options.fillStyle === "solid")
+      ctx.fillStyle = _getSolidFillStyle(value, options);
+    if (options.fillStyle === "segmented")
+      ctx.fillStyle = _getSegmentedFillStyle(canvas, options);
     _drawRoundedRect(
       canvas,
       0,
@@ -249,7 +265,25 @@
     };
   }
 
-  function _getGradientFillStyle(canvas, options) {
+  function _getSolidFillStyle(value, options) {
+    var color = _getBaseFillColor(options);
+    var segments = options.segments;
+    if (segments && segments.length) {
+      color = segments
+        .sort(function(s1, s2) {
+          return s1.startValue > s2.startValue;
+        })
+        .reduce(function(color, segment) {
+          if (value >= segment.startValue && value <= segment.endValue) {
+            return segment.color;
+          }
+          return color;
+        }, color);
+    }
+    return color;
+  }
+
+  function _getSegmentedFillStyle(canvas, options) {
     var ctx = canvas.getContext("2d");
     var height = canvas.height - options._lineHeight - 8;
     var gradient = ctx.createLinearGradient(10, height - 10, 10, 10);

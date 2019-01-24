@@ -9,6 +9,7 @@ Simple widget for displaying data from liquids.
 |            min | Minimum value                                                | Number   | 0       |
 |            max | Maximum value                                                | Number   | 1       |
 |       segments | List of segments.                                            | Array    | [ ]     |
+|      fillStyle | Style of the tank fill. Either "solid" or "segmented".       | String   | "solid" |
 |           dark | When set to true it adjusts colors for a darker background.  | Boolean  | false   |
 |     fontFamily | Font family for the displayed value                          | String   | Arial   |
 |       fontSize | Font size for the displayed value                            | Number   | 20      |
@@ -21,6 +22,7 @@ var element = document.getElementById("widget");
 var liquidTank = new LiquidTank(element, {
     min: 0,
     max: 100,
+    fillStyle: 'solid',
     segments: [
         {
             color: "#00FF00",
