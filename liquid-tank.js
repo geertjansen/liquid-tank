@@ -20,8 +20,14 @@
     this.canvas = document.createElement("canvas");
     this.element.appendChild(this.canvas);
     this.render();
-    this.onResize = _debounce(this.onResize.bind(this), 66);
-    window.addEventListener("resize", this.onResize);
+    if (window.hasOwnProperty("ResizeObserver")) {
+      this.onResize = this.onResize.bind(this);
+      this._resizeObserver = new ResizeObserver(this.onResize);
+      this._resizeObserver.observe(this.element);
+    } else {
+      this.onResize = _debounce(this.onResize.bind(this), 66);
+      window.addEventListener("resize", this.onResize);
+    }
     return this;
   }
 
@@ -30,7 +36,15 @@
       .getContext("2d")
       .clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.element.removeChild(this.canvas);
-    window.removeEventListener("resize", this.onResize);
+    if (window.hasOwnProperty("ResizeObserver")) {
+      if (this._resizeObserver) {
+        this._resizeObserver.unobserve(this.element);
+        this._resizeObserver.disconnect();
+        this._resizeObserver;
+      }
+    } else {
+      window.removeEventListener("resize", this.onResize);
+    }
   };
 
   LiquidTank.prototype.config = function(options) {
