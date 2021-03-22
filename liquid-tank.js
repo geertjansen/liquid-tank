@@ -1,5 +1,6 @@
 (function() {
   function LiquidTank(element, options) {
+    this._destroyed = false;
     this.element =
       typeof element === "string" ? document.querySelector(element) : element;
     this.options = options || {};
@@ -32,19 +33,7 @@
   }
 
   LiquidTank.prototype.clear = function() {
-    this.canvas
-      .getContext("2d")
-      .clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.element.removeChild(this.canvas);
-    if (window.hasOwnProperty("ResizeObserver")) {
-      if (this._resizeObserver) {
-        this._resizeObserver.unobserve(this.element);
-        this._resizeObserver.disconnect();
-        this._resizeObserver;
-      }
-    } else {
-      window.removeEventListener("resize", this.onResize);
-    }
+    this.destroy();
   };
 
   LiquidTank.prototype.config = function(options) {
@@ -53,6 +42,26 @@
       if (typeof options.max !== "undefined") this.options.max = options.max;
     }
     return this;
+  };
+
+  LiquidTank.prototype.destroy = function() {
+    if (!this._destroyed) {
+      this._destroyed = true;
+      this.canvas
+        .getContext("2d")
+        .clearRect(0, 0, this.canvas.width, this.canvas.height);
+      if (window.hasOwnProperty("ResizeObserver")) {
+        if (this._resizeObserver) {
+          this._resizeObserver.unobserve(this.element);
+          this._resizeObserver.disconnect();
+          this._resizeObserver = null;
+        }
+      } else {
+        window.removeEventListener("resize", this.onResize);
+      }
+      this.element.removeChild(this.canvas);
+      this.canvas = null;
+    }
   };
 
   LiquidTank.prototype.render = function() {
